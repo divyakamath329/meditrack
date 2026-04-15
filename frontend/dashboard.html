@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MediTrack | Dashboard</title>
+
+<link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+<div class="container dashboard">
+
+<header class="dashboard-header">
+<h1>MediTrack Dashboard</h1>
+</header>
+
+<section class="user-info" id="userInfo">
+<h2>Loading...</h2>
+</section>
+
+<section class="stats">
+
+<div class="stat-card">
+<div class="stat-number" id="totalMeds">0</div>
+<p>Total Medications</p>
+</div>
+
+<div class="stat-card">
+<div class="stat-number" id="activeMeds">0</div>
+<p>Active</p>
+</div>
+
+</section>
+<h3>Add New Medication</h3>
+
+<form id="medicationForm" class="med-form">
+
+<div class="form-row">
+
+<div class="form-group">
+<label>Medicine Name</label>
+<input type="text" id="medName" required>
+</div>
+
+<div class="form-group">
+<label>Dosage</label>
+<input type="text" id="medDosage" required>
+</div>
+
+</div>
+
+<div class="form-row">
+
+<div class="form-group">
+<label>Frequency</label>
+<input type="text" id="medFrequency" required>
+</div>
+
+<div class="form-group">
+<label>Expiry Date</label>
+<input type="date" id="medExpiry">
+</div>
+
+</div>
+
+<div class="form-row">
+
+<div class="form-group">
+<label>Start Date</label>
+<input type="date" id="medStart">
+</div>
+
+<div class="form-group">
+<label>End Date</label>
+<input type="date" id="medEnd">
+</div>
+
+</div>
+
+<button type="submit">Add Medication</button>
+
+</form>
+
+<h3>Your Medications</h3>
+
+<table id="medicationsTable">
+
+<thead>
+ <tr>
+<th>Medicine Name</th>
+<th>Dosage</th>
+<th>Frequency</th>
+<th>Expiry Date</th>
+<th>Start Date</th>
+<th>End Date</th>
+<th>Action</th>
+</tr>
+</thead>
+
+<tbody>
+
+<tr>
+<td colspan="6">Loading...</td>
+</tr>
+
+</tbody>
+
+</table>
+
+<button class="logout-btn" onclick="logout()">Logout</button>
+
+</div>
+
+<script>
+
+const userEmail = localStorage.getItem('userEmail');
+const userId = localStorage.getItem('userId');
+
+if(!userId){
+window.location.href="login.html"
+}
+async function loadDashboard() {
+    try {
+        // Get user data first to show real email
+        const userResponse = await fetch(`http://localhost:3000/api/dashboard/${userId}`);
+        const userData = await userResponse.json();
+        
+        // Update user info with REAL email
+        document.getElementById('userInfo').innerHTML = `
+            <h2>Welcome back!</h2>
+            <p><strong>Email:</strong> ${userData.userEmail}</p>
+        `;
+        
+        // Load medications using email
+        const medsResponse = await fetch(`http://localhost:3000/get-medications?email=${userEmail}`);
+        const medsData = await medsResponse.json();
+        document.getElementById("totalMeds").textContent = medsData.medications.length;
+
+const today = new Date();
+
+const active = medsData.medications.filter(med => {
+    if (!med.start_date) return false;
+
+    const start = new Date(med.start_date);
+    const end = med.end_date ? new Date(med.end_date) : null;
+
+    return start <= today && (!end || end >= today);
+});
+
+document.getElementById("activeMeds").textContent = active.length;
+        // Update medications table
+        const tbody = document.querySelector('#medicationsTable tbody');
+        if (medsData.medications.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5">No medications found. Add one below!</td></tr>';
+        } else {
+          tbody.innerHTML = medsData.medications.map(med => `
+<tr>
+<td>${med.name}</td>
+<td>${med.dosage}</td>
+<td>${med.frequency}</td>
+<td>${med.expiry_date ? new Date(med.expiry_date).toLocaleDateString() : 'Not set'}</td>
+<td>${med.start_date ? new Date(med.start_date).toLocaleDateString() : 'Not set'}</td>
+<td>${med.end_date ? new Date(med.end_date).toLocaleDateString() : 'Not set'}</td>
+<td>
+<button onclick="deleteMedication(${med.id})">Delete</button>
+</td>
+</tr>
+`).join('');
+} 
+    } catch (error) {
+        document.getElementById('userInfo').innerHTML =
+            '<h2>Error loading dashboard</h2><p>Refresh or login again</p>';
+    }
+}
+
+function logout(){
+localStorage.removeItem("userId")
+window.location.href="login.html"
+}
+async function deleteMedication(id){
+
+if(!confirm("Delete this medication?")) return;
+
+try{
+
+const response = await fetch(`http://localhost:3000/delete-medication/${id}`,{
+method:'DELETE'
+});
+
+const data = await response.json();
+
+if(data.success){
+alert("Medication deleted");
+loadDashboard();
+}
+
+}catch{
+alert("Error deleting medication");
+}
+
+}
+
+// Add medication form
+document.getElementById('medicationForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = {
+    email: userEmail,
+    name: document.getElementById('medName').value,
+    dosage: document.getElementById('medDosage').value,
+    frequency: document.getElementById('medFrequency').value,
+    expiry_date: document.getElementById('medExpiry').value || null,
+    start_date: document.getElementById('medStart').value || null,
+    end_date: document.getElementById('medEnd').value || null
+};
+    
+    try {
+        const response = await fetch('http://localhost:3000/add-medication', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(formData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('✅ Medication Added!');
+            document.getElementById('medicationForm').reset();
+            loadDashboard(); // Reload table
+        } else {
+            alert('❌ Error: ' + data.message);
+        }
+    } catch (error) {
+        alert('❌ Server error. Is backend running?');
+    }
+});
+loadDashboard()
+
+</script>
+
+</body>
+</html>

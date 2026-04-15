@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>MediTrack | Create Account</title>
+
+<link rel="stylesheet" href="style.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="logo">
+        <h1>MediTrack</h1>
+        <p class="subtitle">Your personal medication tracker</p>
+    </div>
+
+    <h2>Create Account</h2>
+
+    <form id="signupForm">
+
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" placeholder="Enter your email" required>
+        </div>
+
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" placeholder="Minimum 6 characters" required minlength="6">
+        </div>
+
+        <button type="submit" id="signupBtn">Create Account</button>
+
+    </form>
+
+    <div id="message"></div>
+
+    <div class="link">
+        Already have an account?  
+        <a href="login.html">Login here</a>
+    </div>
+
+</div>
+
+<script>
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+e.preventDefault();
+
+const email = document.getElementById('email').value;
+const password = document.getElementById('password').value;
+
+const btn = document.getElementById('signupBtn');
+const message = document.getElementById('message');
+
+btn.disabled = true;
+btn.textContent = "Creating account...";
+message.innerHTML = "";
+
+try {
+
+const response = await fetch('http://localhost:3000/api/signup',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({email,password})
+});
+
+const data = await response.json();
+
+if(data.success){
+
+message.innerHTML='<div class="message success">Account created! Redirecting...</div>';
+
+setTimeout(()=>{
+window.location.href="login.html"
+},2000)
+
+}
+else{
+message.innerHTML=`<div class="message error">${data.message}</div>`;
+}
+
+}catch{
+
+message.innerHTML='<div class="message error">Server error</div>';
+
+}
+
+btn.disabled=false;
+btn.textContent="Create Account";
+
+});
+</script>
+
+</body>
+</html>
