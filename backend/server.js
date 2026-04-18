@@ -1,4 +1,5 @@
-const express = require('express');
+
+require('dotenv').config();const express = require('express');
 const bcrypt = require('bcrypt');
 const nodemailer = require('nodemailer');
 const cors = require('cors');
@@ -18,10 +19,10 @@ let transporter;
 try {
     transporter = nodemailer.createTransport({
         service: 'gmail',
-        auth: {
-            user: 'hegdedisha333@gmail.com',
-            pass: 'inxhrxcexwttmmch'   
-        }
+     auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+}
     });
 
     transporter.verify((error, success) => {
@@ -63,28 +64,29 @@ app.post('/api/signup', async (req, res) => {
             return res.status(400).json({ success: false, message: 'Account already exists' });
         }
 
-        // Create user
-        await connection.execute(
-            'INSERT INTO users (email, password) VALUES (?, ?)',
-            [email, hashedPassword]
-        );
-        await connection.end();
+  // Generate OTP
+const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
+// Create user
+await connection.execute(
+    'INSERT INTO users (email, password, otp, is_verified) VALUES (?, ?, ?, 0)',
+    [email, hashedPassword, otp]
+);
         // SEND WELCOME 
 if (transporter) {
     try {
         await transporter.sendMail({
             from: '"MediTrack" <hegdedisha333@gmail.com>',
             to: email,
-            subject: '✅ Welcome to MediTrack!',
-            html: `
-                <div style="font-family: Arial; max-width: 500px; padding: 20px;">
-                    <h2 style="color: #5c4cff;">Welcome to MediTrack!</h2>
-                    <p>Your account <strong>${email}</strong> was created successfully.</p>
-                    <p>Start tracking your medications now!</p>
-                    <hr>
-                    <small>This is an automated message from MediTrack.</small>
-                </div>
+       subject: '🔐 MediTrack OTP Verification',
+html: `
+    <div style="font-family: Arial; padding: 20px;">
+        <h2 style="color:#5c4cff;">Verify your email</h2>
+        <p>Your OTP is:</p>
+        <h1 style="letter-spacing: 5px;">${otp}</h1>
+        <p>Enter this OTP to activate your account.</p>
+    </div>
+
             `
         });
 
@@ -126,6 +128,12 @@ app.post('/api/login', async (req, res) => {
         }
 
         const user = rows[0];
+        if (!user.is_verified) {
+    return res.status(400).json({
+        success: false,
+        message: 'Verify OTP first'
+    });
+}
         const valid = await bcrypt.compare(password, user.password);
 
         if (!valid) {
@@ -291,6 +299,41 @@ app.delete('/delete-medication/:id', async (req, res) => {
 });
 
 // START SERVER 
+app.post('/api/verify-otp', async (req, res) => {
+    try {
+        const { email, otp } = req.body;
+
+        const connection = await createConnection();
+
+        const [rows] = await connection.execute(
+            'SELECT otp FROM users WHERE email = ?',
+            [email]
+        );
+
+        if (rows.length === 0) {
+            await connection.end();
+            return res.status(400).json({ success: false, message: 'User not found' });
+        }
+
+        if (rows[0].otp !== otp) {
+            await connection.end();
+            return res.status(400).json({ success: false, message: 'Invalid OTP' });
+        }
+
+        await connection.execute(
+            'UPDATE users SET is_verified = 1, otp = NULL WHERE email = ?',
+            [email]
+        );
+
+        await connection.end();
+
+        res.json({ success: true, message: 'Verified!' });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ success: false, message: 'Server error' });
+    }
+});
 app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log('✅ Ready for signups and emails!');

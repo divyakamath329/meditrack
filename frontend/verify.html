@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Verify OTP</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Enter OTP</h2>
+
+<input type="email" id="email" placeholder="Email"><br><br>
+<input type="text" id="otp" placeholder="OTP"><br><br>
+
+<button onclick="verifyOTP()">Verify</button>
+
+<script>
+async function verifyOTP(){
+const email = document.getElementById('email').value;
+const otp = document.getElementById('otp').value;
+
+const res = await fetch('http://localhost:3000/api/verify-otp',{
+method:'POST',
+headers:{'Content-Type':'application/json'},
+body:JSON.stringify({email,otp})
+});
+
+const data = await res.json();
+
+if(data.success){
+alert("Verified! Login now");
+window.location.href="login.html";
+}else{
+alert(data.message);
+}
+}
+</script>
+
+</body>
+</html>

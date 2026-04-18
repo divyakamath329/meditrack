@@ -75,8 +75,8 @@ if(data.success){
 message.innerHTML='<div class="message success">Account created! Redirecting...</div>';
 
 setTimeout(()=>{
-window.location.href="login.html"
-},2000)
+localStorage.setItem('verifyEmail', email);
+window.location.href = "verify.html";},2000)
 
 }
 else{
