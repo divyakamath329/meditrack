@@ -46,3 +46,18 @@ MySQL stores user details, medicine information, medication history, and notific
 - SMS and email reminders
 - Cloud storage and backup
 - AI-based health insights
+
+Images
+
+   <img width="868" height="473" alt="Screenshot 2026-10-20 120916" src="https://github.com/user-attachments/assets/3176d194-cff5-44ae-97b8-f98803091e50" />
+
+  <img width="868" height="495" alt="Screenshot 2026-10-20 121208" src="https://github.com/user-attachments/assets/1fb91ea6-d486-4ead-b65e-9a1661371061" />
+
+  <img width="867" height="515" alt="Screenshot 2026-10-20 121256" src="https://github.com/user-attachments/assets/d1a5a63c-0e60-4ff5-8603-47b589d73d7b" />
+
+  <img width="852" height="495" alt="Screenshot 2026-10-20 121312" src="https://github.com/user-attachments/assets/9a5d22fc-9179-423b-8a55-a35380199885" />
+
+  <img width="808" height="462" alt="Screenshot 2026-10-20 121335" src="https://github.com/user-attachments/assets/e38df077-9379-4e56-8809-ab456668b7b7" />
+
+
+
